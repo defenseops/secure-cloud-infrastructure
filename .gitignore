@@ -1,0 +1,61 @@
+# ── Java / Maven ────────────────────────────
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+.mvn/
+mvnw
+mvnw.cmd
+
+# ── Terraform ───────────────────────────────
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfplan
+crash.log
+override.tf
+override.tf.json
+
+# ── Docker ──────────────────────────────────
+.dockerignore
+
+# ── IDE ─────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── OS ──────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# ── Kubernetes secrets (локальные копии) ────
+kubeconfig
+*.kubeconfig
+k8s/secrets-local/
+
+# ── LocalStack ──────────────────────────────
+.localstack/
+localstack_data/
+
+# ── Logs & temp ─────────────────────────────
+*.log
+*.tmp
+*.temp
+logs/
+
+# ── Claude (AI assistant artifacts) ─────────
+.claude/
+CLAUDE.md

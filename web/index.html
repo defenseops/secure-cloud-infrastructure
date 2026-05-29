@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureCloud — Microservices Infrastructure</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Animated background blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- NAV -->
+  <nav class="navbar">
+    <div class="nav-logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">SecureCloud</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#stack">Stack</a></li>
+      <li><a href="#stages">Stages</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="dashboard.html" class="btn-nav">Dashboard →</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">Exam Final Project</div>
+      <h1 class="hero-title">
+        Secure Cloud<br/>
+        <span class="gradient-text">Infrastructure</span>
+      </h1>
+      <p class="hero-sub">
+        Microservices architecture with RBAC, Kubernetes orchestration,
+        LocalStack cloud emulation and full observability stack.
+      </p>
+      <div class="hero-actions">
+        <a href="dashboard.html" class="btn-primary">Open Dashboard</a>
+        <a href="#about" class="btn-ghost">Learn More</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">5</span><span class="stat-label">Stages</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">100</span><span class="stat-label">Points</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">3</span><span class="stat-label">RBAC Roles</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">2</span><span class="stat-label">Replicas HA</span></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="arch-diagram">
+        <div class="arch-node node-k8s">
+          <span class="node-icon">☸</span>
+          <span>Kubernetes</span>
+        </div>
+        <div class="arch-line line-1"></div>
+        <div class="arch-node node-app">
+          <span class="node-icon">☕</span>
+          <span>Spring Boot</span>
+        </div>
+        <div class="arch-line line-2"></div>
+        <div class="arch-node node-cloud">
+          <span class="node-icon">🪣</span>
+          <span>LocalStack</span>
+        </div>
+        <div class="arch-line line-3"></div>
+        <div class="arch-node node-monitor">
+          <span class="node-icon">📊</span>
+          <span>Prometheus</span>
+        </div>
+        <div class="arch-line line-4"></div>
+        <div class="arch-node node-grafana">
+          <span class="node-icon">📈</span>
+          <span>Grafana</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="section" id="about">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Overview</span>
+        <h2>What is this project?</h2>
+        <p>A production-grade cloud infrastructure running locally, demonstrating real-world DevSecOps practices.</p>
+      </div>
+      <div class="cards-grid">
+        <div class="glass-card">
+          <div class="card-icon">🔐</div>
+          <h3>Role-Based Access</h3>
+          <p>Three-tier RBAC system with Viewer, Editor and Admin roles enforced via Spring Security <code>@PreAuthorize</code> annotations on every endpoint.</p>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon">☁️</div>
+          <h3>Cloud Emulation</h3>
+          <p>LocalStack emulates AWS services locally — S3 bucket for file storage and DynamoDB tables for user and role management. No real AWS account needed.</p>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon">🏗️</div>
+          <h3>Infrastructure as Code</h3>
+          <p>All cloud resources are defined in Terraform. Running <code>terraform apply</code> provisions S3, DynamoDB tables and seed data automatically.</p>
+        </div>
+        <div class="glass-card">
+          <div class="card-icon">🔍</div>
+          <h3>Full Observability</h3>
+          <p>Prometheus scrapes metrics every 15s from Spring Actuator. Grafana displays a live dashboard of authorization errors (HTTP 403) and all request rates.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STACK -->
+  <section class="section section-dark" id="stack">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Technology</span>
+        <h2>Tech Stack</h2>
+        <p>Industry-standard tools used in modern cloud-native applications.</p>
+      </div>
+      <div class="stack-grid">
+        <div class="stack-item">
+          <div class="stack-logo">☕</div>
+          <div class="stack-info">
+            <h4>Java 17 + Spring Boot 3</h4>
+            <p>Web framework with Spring Security, Actuator and AWS SDK v2</p>
+          </div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-logo">🐳</div>
+          <div class="stack-info">
+            <h4>Docker</h4>
+            <p>Multi-stage build, non-root user (uid 1001), minimal JRE image</p>
+          </div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-logo">☸</div>
+          <div class="stack-info">
+            <h4>Kubernetes (minikube)</h4>
+            <p>Deployment, Service, ConfigMap, Secret, NetworkPolicy, ServiceAccount</p>
+          </div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-logo">🪣</div>
+          <div class="stack-info">
+            <h4>LocalStack</h4>
+            <p>Local AWS emulation — S3 and DynamoDB on port 4566</p>
+          </div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-logo">🏗️</div>
+          <div class="stack-info">
+            <h4>Terraform</h4>
+            <p>IaC provisioning of all cloud resources, endpoint pointed to LocalStack</p>
+          </div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-logo">📊</div>
+          <div class="stack-info">
+            <h4>Prometheus + Grafana</h4>
+            <p>Metrics scraping, time-series storage, and visualization dashboards</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAGES -->
+  <section class="section" id="stages">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Implementation</span>
+        <h2>Project Stages</h2>
+        <p>Five sequential stages, each building on the previous one.</p>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-marker">
+            <span class="marker-num">01</span>
+          </div>
+          <div class="timeline-content glass-card">
+            <div class="timeline-badge">20 pts</div>
+            <h3>Infrastructure as Code</h3>
+            <p>Terraform provisions S3 bucket and DynamoDB tables inside LocalStack. Provider configured to <code>http://localhost:4566</code> with test credentials.</p>
+            <div class="timeline-tags">
+              <span>Terraform</span><span>LocalStack</span><span>S3</span><span>DynamoDB</span>
+            </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-marker">
+            <span class="marker-num">02</span>
+          </div>
+          <div class="timeline-content glass-card">
+            <div class="timeline-badge">20 pts</div>
+            <h3>Secure Application Development</h3>
+            <p>Spring Boot app with three RBAC roles. Every AWS SDK call is protected via <code>@PreAuthorize</code>. Credentials never hardcoded — read from environment.</p>
+            <div class="timeline-tags">
+              <span>Spring Security</span><span>RBAC</span><span>AWS SDK v2</span>
+            </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-marker">
+            <span class="marker-num">03</span>
+          </div>
+          <div class="timeline-content glass-card">
+            <div class="timeline-badge">15 pts</div>
+            <h3>Containerization & Orchestration</h3>
+            <p>Multi-stage Dockerfile with non-root user. Kubernetes deployment with 2 replicas, Secrets, ConfigMaps, NetworkPolicy and Least-Privilege ServiceAccount.</p>
+            <div class="timeline-tags">
+              <span>Docker</span><span>Kubernetes</span><span>NetworkPolicy</span>
+            </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-marker">
+            <span class="marker-num">04</span>
+          </div>
+          <div class="timeline-content glass-card">
+            <div class="timeline-badge">10 pts</div>
+            <h3>Observability & Monitoring</h3>
+            <p>Spring Actuator exposes Prometheus metrics. Grafana dashboard auto-provisioned with graphs for 403 authorization errors and all HTTP request rates.</p>
+            <div class="timeline-tags">
+              <span>Prometheus</span><span>Grafana</span><span>Actuator</span>
+            </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-marker">
+            <span class="marker-num">05</span>
+          </div>
+          <div class="timeline-content glass-card">
+            <div class="timeline-badge">+bonus</div>
+            <h3>Network & Infrastructure Security</h3>
+            <p>NetworkPolicy restricts egress to LocalStack only. ServiceAccount with <code>automountServiceAccountToken: false</code> enforces Principle of Least Privilege.</p>
+            <div class="timeline-tags">
+              <span>NetworkPolicy</span><span>ServiceAccount</span><span>Zero Trust</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECURITY -->
+  <section class="section section-dark" id="security">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Security</span>
+        <h2>Security Design</h2>
+        <p>Every layer of the stack has security controls applied.</p>
+      </div>
+      <div class="security-grid">
+        <div class="security-row">
+          <div class="security-label">RBAC Enforcement</div>
+          <div class="security-bar">
+            <div class="security-fill" style="width:100%">@PreAuthorize on every method</div>
+          </div>
+        </div>
+        <div class="security-row">
+          <div class="security-label">Secret Management</div>
+          <div class="security-bar">
+            <div class="security-fill" style="width:100%">K8s Secrets → env vars, zero hardcode</div>
+          </div>
+        </div>
+        <div class="security-row">
+          <div class="security-label">Container Security</div>
+          <div class="security-bar">
+            <div class="security-fill" style="width:90%">Non-root user, drop ALL capabilities</div>
+          </div>
+        </div>
+        <div class="security-row">
+          <div class="security-label">Network Isolation</div>
+          <div class="security-bar">
+            <div class="security-fill" style="width:85%">NetworkPolicy, egress to LocalStack only</div>
+          </div>
+        </div>
+        <div class="security-row">
+          <div class="security-label">Least Privilege</div>
+          <div class="security-bar">
+            <div class="security-fill" style="width:80%">ServiceAccount, no token automount</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rbac-table-wrap">
+        <h3>RBAC Access Matrix</h3>
+        <table class="rbac-table">
+          <thead>
+            <tr>
+              <th>Endpoint</th>
+              <th>VIEWER</th>
+              <th>EDITOR</th>
+              <th>ADMIN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>GET /files</code></td>
+              <td class="allow">✓</td>
+              <td class="allow">✓</td>
+              <td class="allow">✓</td>
+            </tr>
+            <tr>
+              <td><code>POST /files/upload</code></td>
+              <td class="deny">✗ 403</td>
+              <td class="allow">✓</td>
+              <td class="allow">✓</td>
+            </tr>
+            <tr>
+              <td><code>GET /admin/secret</code></td>
+              <td class="deny">✗ 403</td>
+              <td class="deny">✗ 403</td>
+              <td class="allow">✓</td>
+            </tr>
+            <tr>
+              <td><code>GET /actuator/prometheus</code></td>
+              <td class="allow">public</td>
+              <td class="allow">public</td>
+              <td class="allow">public</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-logo">
+          <span class="logo-icon">⬡</span>
+          <span class="logo-text">SecureCloud</span>
+        </div>
+        <p class="footer-text">Exam Final Project · Spring Boot · Kubernetes · LocalStack · Terraform</p>
+        <a href="dashboard.html" class="btn-primary">Open Dashboard →</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

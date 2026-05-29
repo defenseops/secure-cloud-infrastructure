@@ -1,0 +1,45 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cloud-app-network-policy
+  namespace: cloud-app
+spec:
+  podSelector:
+    matchLabels:
+      app: cloud-app
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    # Разрешить входящий трафик от всех (NodePort + Prometheus scrape)
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Prometheus может scrape метрики с app pods
+    - from:
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - protocol: TCP
+          port: 8080
+
+  egress:
+    # Разрешить трафик только к LocalStack
+    - to:
+        - podSelector:
+            matchLabels:
+              app: localstack
+      ports:
+        - protocol: TCP
+          port: 4566
+    # Разрешить DNS (обязательно, иначе не резолвятся имена)
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

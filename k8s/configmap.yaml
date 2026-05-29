@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: cloud-app
+data:
+  LOCALSTACK_URL: "http://localstack.cloud-app.svc.cluster.local:4566"
+  AWS_REGION: "us-east-1"
+  S3_BUCKET_NAME: "documents-bucket"

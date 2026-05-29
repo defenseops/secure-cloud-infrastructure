@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-provider
+  namespace: cloud-app
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: default
+        orgId: 1
+        folder: ""
+        type: file
+        disableDeletion: false
+        options:
+          path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-auth-errors
+  namespace: cloud-app
+data:
+  auth-errors.json: |
+    {
+      "title": "Auth Errors Dashboard",
+      "uid": "auth-errors",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "10s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "HTTP 403 Forbidden — Authorization Errors (rate/min)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 10 },
+          "targets": [
+            {
+              "expr": "rate(http_server_requests_seconds_count{status=\"403\"}[1m]) * 60",
+              "legendFormat": "403 errors/min — {{uri}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "unit": "reqpm"
+            }
+          }
+        },
+        {
+          "id": 2,
+          "title": "Total 403 Errors (cumulative)",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 10, "w": 8, "h": 4 },
+          "targets": [
+            {
+              "expr": "sum(http_server_requests_seconds_count{status=\"403\"})",
+              "legendFormat": "Total 403",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "All HTTP Status Codes",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 14, "w": 24, "h": 10 },
+          "targets": [
+            {
+              "expr": "rate(http_server_requests_seconds_count[1m]) * 60",
+              "legendFormat": "{{status}} — {{uri}}",
+              "refId": "C"
+            }
+          ]
+        }
+      ],
+      "time": { "from": "now-15m", "to": "now" }
+    }
