@@ -69,12 +69,12 @@
 │   └── src/main/
 │       ├── java/com/example/cloudapp/
 │       │   ├── config/
-│       │   │   ├── SecurityConfig.java   # RBAC + @PreAuthorize + HTTP Basic
+│       │   │   ├── SecurityConfig.java   # RBAC + @PreAuthorize + HTTP Basic + CORS
 │       │   │   └── AwsConfig.java        # S3Client → LocalStack endpoint
 │       │   ├── service/
-│       │   │   └── S3Service.java        # listFiles(), uploadFile()
+│       │   │   └── S3Service.java        # listFiles(), uploadFile(), downloadFile()
 │       │   └── controller/
-│       │       ├── FileController.java   # GET /files, POST /files/upload
+│       │       ├── FileController.java   # GET /files, POST /files/upload, GET /files/download/{name}, GET /files/view/{name}
 │       │       └── AdminController.java  # GET /admin/secret
 │       └── resources/
 │           └── application.yml
@@ -126,12 +126,6 @@ chmod +x scripts/install-ubuntu.sh
 mkdir -p ~/.kube
 sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
 sudo chown $USER:$USER ~/.kube/config
-export KUBECONFIG=~/.kube/config
-```
-
-Добавить в `~/.bashrc` чтобы не вводить каждый раз:
-
-```bash
 echo 'export KUBECONFIG=~/.kube/config' >> ~/.bashrc
 source ~/.bashrc
 ```
@@ -152,7 +146,7 @@ chmod +x scripts/setup.sh
 - DynamoDB таблица `users` (viewer, editor, admin + BCrypt хеши)
 - DynamoDB таблица `roles`
 
-Проверка (установить credentials перед запуском):
+Проверка:
 
 ```bash
 export AWS_ACCESS_KEY_ID=test
@@ -164,7 +158,10 @@ aws --endpoint-url=http://localhost:4566 dynamodb list-tables
 aws --endpoint-url=http://localhost:4566 dynamodb scan --table-name users
 ```
 
-> **Важно:** если terraform apply зависает на создании S3 bucket — проблема в отсутствии `s3_use_path_style = true` в provider. Это уже исправлено в `terraform/main.tf`.
+> **Важно:** если `terraform apply` зависает на создании S3 bucket дольше 30 секунд — это
+> проблема виртуального-hosted стиля. В AWS provider v5 по умолчанию используется
+> `bucket.localhost:4566`, которого не существует. Исправлено добавлением
+> `s3_use_path_style = true` в `terraform/main.tf`.
 
 ### Этап 2–5 — Сборка и деплой в Kubernetes
 
@@ -180,26 +177,42 @@ chmod +x scripts/deploy-k8s.sh
 3. `docker save | k3s ctr images import` — загрузка образов в k3s (без registry)
 4. `kubectl apply` всех манифестов (namespace → localstack → app → monitoring → web)
 5. Ожидание готовности всех Deployments
-6. Вывод адресов для доступа
+6. Создание S3 bucket в кластерном LocalStack
+7. Вывод адресов для доступа
 
-> **Важно:** после первого деплоя нужно создать S3 bucket в кластерном LocalStack (он изолирован от локального):
->
+> **Важно:** LocalStack внутри кластера Kubernetes изолирован от локального LocalStack.
+> После деплоя скрипт автоматически создаёт bucket внутри кластера:
 > ```bash
 > kubectl exec -n cloud-app deployment/localstack -- awslocal s3 mb s3://documents-bucket
 > ```
+> Если всё равно ошибка 500 на `/files` — выполните эту команду вручную.
 
 ---
 
 ## Адреса сервисов
 
-```
-NODE_IP=192.168.64.11   # IP вашей VM (узнать: hostname -I | awk '{print $1}')
+```bash
+NODE_IP=$(hostname -I | awk '{print $1}')   # узнать IP VM
 
 Веб-сайт:   http://$NODE_IP:30000
 Spring API: http://$NODE_IP:30080
 Prometheus: http://$NODE_IP:30090
 Grafana:    http://$NODE_IP:30030  (admin / admin)
 ```
+
+> **Примечание:** если NodePort не доступен снаружи (k3s по умолчанию слушает только на
+> localhost), используйте socat для проброса портов:
+>
+> ```bash
+> # Установить socat
+> sudo apt-get install -y socat
+>
+> # Пробросить все 4 порта на внешний интерфейс (запустить в фоне)
+> sudo socat TCP-LISTEN:30000,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:30000 &
+> sudo socat TCP-LISTEN:30080,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:30080 &
+> sudo socat TCP-LISTEN:30090,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:30090 &
+> sudo socat TCP-LISTEN:30030,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:30030 &
+> ```
 
 ---
 
@@ -208,6 +221,8 @@ Grafana:    http://$NODE_IP:30030  (admin / admin)
 | Endpoint | VIEWER | EDITOR | ADMIN |
 |----------|:------:|:------:|:-----:|
 | `GET /files` | ✅ | ✅ | ✅ |
+| `GET /files/download/{name}` | ✅ | ✅ | ✅ |
+| `GET /files/view/{name}` | ✅ | ✅ | ✅ |
 | `POST /files/upload` | ❌ 403 | ✅ | ✅ |
 | `GET /admin/secret` | ❌ 403 | ❌ 403 | ✅ |
 | `/actuator/prometheus` | публичный | публичный | публичный |
@@ -283,25 +298,72 @@ done
 
 | Требование | Реализация |
 |------------|------------|
-| RBAC (3 роли) | Spring Security `@PreAuthorize` на каждом методе |
-| Без хардкода секретов | Все credentials через K8s Secrets → env vars |
-| Non-root контейнер | `USER appuser` (uid 1001) в Dockerfile + `runAsNonRoot: true` |
+| RBAC (3 роли) | Spring Security `@PreAuthorize` на каждом endpoint |
+| Без хардкода секретов | AWS credentials хранятся в K8s Secret → env vars |
+| Non-root контейнер | `USER appuser` (uid 1001) в Dockerfile + `runAsNonRoot: true` в Pod spec |
 | Минимум привилегий | `ServiceAccount` с `automountServiceAccountToken: false` + `drop: ALL` capabilities |
-| Сетевая изоляция | `NetworkPolicy` — egress только к LocalStack (4566) + DNS (53) |
-| Разделение конфигурации | K8s ConfigMap для несекретных настроек |
+| Сетевая изоляция | `NetworkPolicy` — egress только к LocalStack (:4566) + DNS (:53) |
+| Разделение конфигурации | K8s ConfigMap для несекретных настроек (URL, регион, имя bucket) |
 | Высокая доступность | `replicas: 2` + liveness/readiness probes на `/actuator/health` |
 
 ---
 
-## Баллы
+## Известные проблемы и решения
 
-| Категория | Критерий | Баллы |
-|-----------|----------|-------|
-| IaC | Terraform создаёт S3 + DynamoDB в LocalStack | 20 |
-| Безопасность | Spring Security RBAC — 3 роли работают корректно | 20 |
-| Безопасность | Нет хардкода — секреты через K8s Secrets | 15 |
-| Kubernetes | Приложение запущено в K8s и доступно | 15 |
-| Мониторинг | Prometheus собирает метрики (включая 403 ошибки) | 10 |
-| Интеграция | Приложение читает/пишет S3 в LocalStack | 10 |
-| Защита | Уверенное объяснение проекта | 10 |
-| **ИТОГО** | | **100** |
+### Terraform зависает при создании S3 bucket
+AWS provider v5 по умолчанию использует virtual-hosted style (`bucket.host`), которого нет в LocalStack. Исправлено в `terraform/main.tf`:
+```hcl
+s3_use_path_style = true
+```
+
+### kubectl: permission denied на k3s.yaml
+k3s.yaml принадлежит root. Решение — скопировать в домашнюю папку:
+```bash
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown $USER:$USER ~/.kube/config
+export KUBECONFIG=~/.kube/config
+```
+
+### /files возвращает 500 после деплоя
+LocalStack внутри кластера — отдельный экземпляр без данных. Нужно создать bucket:
+```bash
+kubectl exec -n cloud-app deployment/localstack -- awslocal s3 mb s3://documents-bucket
+```
+
+### CoreDNS не готов после перезапуска k3s
+Если k3s запущен с неправильным IP (например после смены сети в VM), CoreDNS не может подключиться к API server:
+```bash
+# Добавить IP в /etc/systemd/system/k3s.service в секцию ExecStart:
+#   --node-ip=<VM_IP>
+#   --node-external-ip=<VM_IP>
+#   --advertise-address=<VM_IP>
+sudo systemctl daemon-reload
+sudo systemctl restart k3s
+# Если endpoint kubernetes всё ещё старый — удалить etcd базу:
+sudo systemctl stop k3s
+sudo rm -rf /var/lib/rancher/k3s/server/db
+sudo systemctl start k3s
+# После запуска k3s заново выполнить deploy-k8s.sh
+```
+
+### NodePort не доступен снаружи VM
+k3s NodePort по умолчанию слушает только на 127.0.0.1. Пробросить через socat:
+```bash
+sudo apt-get install -y socat
+sudo socat TCP-LISTEN:30080,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:30080 &
+```
+
+---
+
+## Соответствие критериям оценивания
+
+| Категория | Критерий | Баллы | Статус |
+|-----------|----------|-------|--------|
+| IaC | Terraform создаёт S3 + DynamoDB в LocalStack | 20 | ✅ |
+| Безопасность | Spring Security RBAC — 3 роли работают корректно | 20 | ✅ |
+| Безопасность | Нет хардкода — AWS credentials через K8s Secrets | 15 | ✅ |
+| Kubernetes | Приложение запущено в K8s (2 реплики) и доступно | 15 | ✅ |
+| Мониторинг | Prometheus собирает метрики (включая 403 ошибки) | 10 | ✅ |
+| Интеграция | Приложение читает/пишет S3 в LocalStack | 10 | ✅ |
+| Защита | Уверенное объяснение проекта | 10 | — |
+| **ИТОГО** | | **100** | |

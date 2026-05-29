@@ -8,7 +8,7 @@ const STATE = {
   errorCount: 0,
   activityLog: [],
   files: [],
-  apiBase: 'http://192.168.31.22:8888',
+  apiBase: `http://${window.location.hostname}:30080`,
 };
 
 const USERS = {

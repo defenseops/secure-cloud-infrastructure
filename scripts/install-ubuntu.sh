@@ -32,33 +32,20 @@ echo ""
 echo "==> Installing k3s (lightweight Kubernetes)..."
 curl -sfL https://get.k3s.io | sh -
 
-# Дать k3s время запуститься
 sleep 10
 
-# Настроить kubectl без sudo
 mkdir -p "$HOME/.kube"
 sudo cp /etc/rancher/k3s/k3s.yaml "$HOME/.kube/config"
 sudo chown "$USER":"$USER" "$HOME/.kube/config"
 export KUBECONFIG="$HOME/.kube/config"
 
-echo "    k3s installed. Kubernetes version:"
-k3s kubectl version --short 2>/dev/null || kubectl version --short
+echo "    k3s installed."
 
 # ── Terraform ───────────────────────────────
 echo ""
-echo "==> Installing Terraform..."
-sudo apt-get install -y gnupg software-properties-common
-
-wget -O- https://apt.releases.hashicorp.com/gpg | \
-  sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
-  https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
-  sudo tee /etc/apt/sources.list.d/hashicorp.list
-
-sudo apt-get update -q
-sudo apt-get install -y terraform
-echo "    Terraform $(terraform version -json | python3 -c 'import sys,json; print(json.load(sys.stdin)["terraform_version"])')"
+echo "==> Installing Terraform (via snap)..."
+sudo snap install terraform --classic
+echo "    $(terraform version | head -1)"
 
 # ── Java 17 + Maven ─────────────────────────
 echo ""
@@ -68,19 +55,22 @@ echo "    $(java -version 2>&1 | head -1)"
 
 # ── AWS CLI ─────────────────────────────────
 echo ""
-echo "==> Installing AWS CLI (for LocalStack testing)..."
+echo "==> Installing AWS CLI..."
 sudo apt-get install -y awscli
 echo "    $(aws --version)"
 
-# ── kubectl alias ───────────────────────────
+# ── kubectl ─────────────────────────────────
 echo ""
 echo "==> Configuring kubectl..."
-# k3s ставит свой kubectl, делаем симлинк для удобства
 if ! command -v kubectl &>/dev/null; then
-  sudo ln -s /usr/local/bin/k3s /usr/local/bin/kubectl
-  echo '#!/bin/bash' | sudo tee /usr/local/bin/kubectl > /dev/null
-  echo 'k3s kubectl "$@"' | sudo tee /usr/local/bin/kubectl > /dev/null
+  sudo bash -c 'echo "#!/bin/bash" > /usr/local/bin/kubectl'
+  sudo bash -c 'echo "k3s kubectl \"\$@\"" >> /usr/local/bin/kubectl'
   sudo chmod +x /usr/local/bin/kubectl
+fi
+
+# ── KUBECONFIG в .bashrc ────────────────────
+if ! grep -q "KUBECONFIG" "$HOME/.bashrc"; then
+  echo 'export KUBECONFIG=~/.kube/config' >> "$HOME/.bashrc"
 fi
 
 # ── Summary ─────────────────────────────────
@@ -89,12 +79,12 @@ echo "========================================"
 echo " Installation complete!"
 echo "========================================"
 echo ""
-echo " IMPORTANT: Run this to apply group changes:"
+echo " IMPORTANT: Run this to apply docker group:"
 echo "   newgrp docker"
 echo ""
-echo " Then deploy the project:"
-echo "   ./scripts/setup.sh          # Stage 1: LocalStack + Terraform"
-echo "   ./scripts/deploy-k8s.sh     # Stages 2-5: Full K8s deploy"
+echo " Then deploy:"
+echo "   ./scripts/setup.sh        # Stage 1: LocalStack + Terraform"
+echo "   ./scripts/deploy-k8s.sh   # Stages 2-5: K8s deploy"
 echo ""
-echo " Node IP (use in browser):"
+echo " Node IP:"
 echo "   $(hostname -I | awk '{print $1}')"
