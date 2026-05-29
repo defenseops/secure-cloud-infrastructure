@@ -7,7 +7,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 if ! command -v kubectl &>/dev/null; then
   alias kubectl='k3s kubectl'
 fi
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+export KUBECONFIG="$HOME/.kube/config"
 
 echo "==> Building Docker image..."
 docker build -t cloud-app:latest "$PROJECT_ROOT/app"
