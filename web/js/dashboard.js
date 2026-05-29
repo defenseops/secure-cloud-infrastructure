@@ -8,7 +8,7 @@ const STATE = {
   errorCount: 0,
   activityLog: [],
   files: [],
-  apiBase: 'http://192.168.64.11:30080',
+  apiBase: 'http://localhost:30080',
 };
 
 const USERS = {
