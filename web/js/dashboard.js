@@ -8,8 +8,7 @@ const STATE = {
   errorCount: 0,
   activityLog: [],
   files: [],
-  // Change this to your minikube IP when running on VM
-  apiBase: 'http://localhost:8080',
+  apiBase: 'http://192.168.64.11:30080',
 };
 
 const USERS = {
@@ -189,19 +188,89 @@ async function loadFiles() {
 function renderFiles(files) {
   const tbody = document.getElementById('filesTableBody');
   if (!files.length) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:40px">No files in bucket. Upload something!</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:40px">No files in bucket. Upload something!</td></tr>';
     return;
   }
-  const ext2icon = { pdf:'📄', png:'🖼️', jpg:'🖼️', yml:'⚙️', yaml:'⚙️', txt:'📝', json:'🗂️', zip:'📦' };
+  const ext2icon = { pdf:'📄', png:'🖼️', jpg:'🖼️', gif:'🖼️', yml:'⚙️', yaml:'⚙️', txt:'📝', json:'🗂️', zip:'📦' };
+  const viewable = ['txt', 'json', 'yml', 'yaml', 'png', 'jpg', 'gif', 'pdf'];
   tbody.innerHTML = files.map(name => {
     const ext  = name.split('.').pop().toLowerCase();
     const icon = ext2icon[ext] || '📁';
+    const canView = viewable.includes(ext);
+    const base = STATE.apiBase;
+    const auth = btoa(`${STATE.user}:${STATE.password}`);
     return `<tr>
       <td><span class="file-icon">${icon}</span><span class="file-name">${name}</span></td>
       <td style="color:var(--text-muted)">${ext.toUpperCase()}</td>
-      <td style="color:var(--text-muted)">just now</td>
+      <td style="color:var(--text-muted)">S3</td>
+      <td style="display:flex;gap:8px;align-items:center">
+        ${canView ? `<button class="file-btn view-btn" onclick="viewFile('${name}')">👁 Просмотр</button>` : ''}
+        <button class="file-btn download-btn" onclick="downloadFile('${name}')">⬇ Скачать</button>
+      </td>
     </tr>`;
   }).join('');
+}
+
+async function downloadFile(filename) {
+  logActivity(`GET /files/download/${filename}`, 'blue', '200');
+  const res = await apiFetch('GET', `/files/download/${encodeURIComponent(filename)}`);
+  if (!res || !res.ok) {
+    showToast('❌ Ошибка скачивания', 'error');
+    return;
+  }
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('⬇ Скачивается: ' + filename, 'success');
+}
+
+async function viewFile(filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+  const res = await apiFetch('GET', `/files/view/${encodeURIComponent(filename)}`);
+  if (!res || !res.ok) {
+    showToast('❌ Ошибка открытия файла', 'error');
+    return;
+  }
+  logActivity(`GET /files/view/${filename}`, 'blue', '200');
+
+  if (['png','jpg','gif'].includes(ext)) {
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    openPreviewModal(filename, `<img src="${url}" style="max-width:100%;border-radius:8px">`);
+  } else {
+    const text = await res.text();
+    openPreviewModal(filename, `<pre style="white-space:pre-wrap;word-break:break-all;color:var(--text-primary);font-size:0.85rem">${escapeHtml(text)}</pre>`);
+  }
+  showToast('👁 Открыт: ' + filename, 'info');
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function openPreviewModal(title, content) {
+  let modal = document.getElementById('previewModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'previewModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+    modal.innerHTML = `
+      <div style="background:var(--glass-bg);backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:16px;max-width:800px;width:100%;max-height:80vh;overflow:auto;padding:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <span id="previewTitle" style="font-weight:600;color:var(--text-primary)"></span>
+          <button onclick="document.getElementById('previewModal').remove()" style="background:var(--red);border:none;color:#fff;border-radius:8px;padding:6px 14px;cursor:pointer">✕ Закрыть</button>
+        </div>
+        <div id="previewContent"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  }
+  document.getElementById('previewTitle').textContent = title;
+  document.getElementById('previewContent').innerHTML = content;
 }
 
 async function uploadFile(input) {

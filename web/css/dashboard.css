@@ -475,6 +475,22 @@
 .forbidden-banner p  { font-size: 0.85rem; color: var(--text-muted); }
 
 /* ============================================================
+   FILE ACTION BUTTONS
+   ============================================================ */
+.file-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.file-btn:hover { opacity: 0.8; }
+.view-btn     { background: rgba(99,102,241,0.2); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
+.download-btn { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 768px) {
